@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './App';
 import { createGlobalStyle, ThemeProvider } from 'styled-components';
+import { QueryClient, QueryClientProvider } from "react-query"
 import { theme } from './theme';
 
 const GlobalStyle = createGlobalStyle`
@@ -36,6 +37,8 @@ footer, header, hgroup, menu, nav, section {
 body {
 	line-height: 1;
 	font-family: 'Nunito', sans-serif;
+	background-color: black;
+	color: #e5e5e5;	
 }
 ol, ul {
 	list-style: none;
@@ -58,12 +61,16 @@ a {
 }
 `;
 
+const client = new QueryClient();
+
 ReactDOM.render(
 	<React.StrictMode>
-		<GlobalStyle />
-		<ThemeProvider theme={theme}>
-			<App />
-		</ThemeProvider>
+		<QueryClientProvider client={client}>
+			<GlobalStyle />
+			<ThemeProvider theme={theme}>
+				<App />
+			</ThemeProvider>
+		</QueryClientProvider>
 	</React.StrictMode>,
 	document.getElementById('root')
 );
