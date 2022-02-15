@@ -26,8 +26,9 @@ const Banner = styled.div<{ bgPhoto: string }>`
     flex-direction: column;
     justify-content: center;
     padding: 0 30px;
-    background-image: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,1)) ,url("${props => props.bgPhoto}");
-    background-size: 
+    background-image: linear-gradient(to left, rgba(0,0,0,0), rgba(0,0,0,1)) ,url("${props => props.bgPhoto}");
+    background-size: cover;
+    background-position: center 25%;
 `;
 const Title = styled.h2`
     font-size: 50px;
@@ -35,48 +36,12 @@ const Title = styled.h2`
 `;
 const Overview = styled.p`
     font-size: 24px;
+    font-weight: 300;
     width: 50%;
+    line-height: 30px;
 `;
-const SliderBox = styled.div`
-  position: relative;
-  top: -100px;
-  height: 250px;
-`;
-const Row = styled(motion.div)`
-  display: grid;
-  gap: 5px;
-  grid-template-columns: repeat(6, 1fr);
-  position: absolute;
-  width: 100%;
-`;
-const Box = styled(motion.div)`
-  background-color: white;
-  height: 200px;
-  font-size: 66px;
-  background-size: cover;
-  background-position: center center;
-  cursor: pointer;
-  &:first-child {
-    transform-origin: center left;
-  }
-  &:last-child {
-    transform-origin: center right;
-  }
-`;
-const Thumbnail = styled.div<{ bgPhoto: string }>`
-  height: 100%;
-  background-image: url("${props => props.bgPhoto}");
-  background-size: cover;
-  background-position: center center;
-`;
-const Info = styled(motion.div)`
-  opacity: 0;
-  padding: 5px;
-  background-color: ${props => props.theme.black.lighter};
-  h4 {
-      font-size: 18px;
-      text-align: center;      
-  }
+const SliderWrap = styled.div`
+    
 `;
 const Overlay = styled(motion.div)`
   position: fixed;
@@ -153,13 +118,28 @@ const InfoVariants = {
 }
 
 const offset = 6; // box max count
+const sliderInfo = {
+    "NOW": {
+        index: 0,
+        title: "NOW MOVIE",
+        key: "NOW"
+    },
+    "TOP": {
+        index: 0,
+        title: "TOP MOVIE",
+        key: "TOP",
+    },
+    "UP": {
+        index: 0,
+        title: "COMMING MOVIE",
+        key: "UP",
+    }
+};
 
 function Home() {
     const history = useHistory();
     const bigMovieMatch = useRouteMatch<{ movieId: string }>("/movies/:movieId");
     const { scrollY } = useViewportScroll();
-    const [index, setIndex] = useState(0);
-    const [leaving, setLeaving] = useState(false);
     const clickedMovie = useRecoilValue(selectMovieAtom);
     const { data: nowMovies, isLoading: nowMovieLoading } = useQuery<IGetMovieResult>(["movies", "nowPlaying"], getMovie);
     const { data: topMovies, isLoading: topMovieLoading } = useQuery<IGetMovieResult>(["movies", "topMovie"], getTopMovie);
@@ -181,14 +161,16 @@ function Home() {
                     <Loading />
                     :
                     <>
-                        <Banner bgPhoto={makeImagePath(nowMovies?.results[0].backdrop_path || "")}>
+                        <Banner bgPhoto={makeImagePath(nowMovies?.results[0].poster_path || "")}>
                             <Title>{nowMovies?.results[0].title}</Title>
                             <Overview>{nowMovies?.results[0].overview}</Overview>
                         </Banner>
 
-                        <Slider data={nowMovies}></Slider>
-                        <Slider data={topMovies}></Slider>
-                        <Slider data={upMovies}></Slider>
+                        <SliderWrap>
+                            <Slider sliderInfo={sliderInfo.TOP} data={topMovies}></Slider>
+                            <Slider sliderInfo={sliderInfo.NOW} data={nowMovies}></Slider>
+                            <Slider sliderInfo={sliderInfo.UP} data={upMovies}></Slider>
+                        </SliderWrap>
 
                         <AnimatePresence>
                             {bigMovieMatch ? (
@@ -220,7 +202,7 @@ function Home() {
                         </AnimatePresence>
                     </>
             }
-        </Wrapper>
+        </Wrapper >
     );
 }
 

@@ -9,5 +9,6 @@ export const selectMovieAtom = atom<IMovie>({
         poster_path: "",
         title: "",
         overview: "",
+        vote_average: 0,
     },
 });
