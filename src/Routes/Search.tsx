@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect } from "react";
 import { useQuery } from "react-query";
-import { useLocation } from "react-router-dom";
+import { useHistory, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import { searchMovie, searchTv } from "../api";
 import { makeImagePath } from "../utils";
@@ -15,26 +15,22 @@ const Keyword = styled.div`
     font-size: 24px;
     color: rgba(255,255,255,0.6);
 `;
-const Slider = styled.div`
-  position: relative;
-  margin: 30px 0 0;
-  height: 250px;
-`;
-const Row = styled(motion.div)`
+const List = styled(motion.div)`
   display: grid;
-  gap: 5px;
-  grid-template-columns: repeat(6, 1fr);
-  position: absolute;
+  gap: 20px;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
   width: 100%;
   margin-top: 20px;
 `;
 const Box = styled(motion.div)`
   position: relative;
   background-color: ${props => props.theme.black.darker};
-  height: 200px;
+  height: 300px;
   font-size: 66px;
   background-size: cover;
   background-position: center center;
+  border-radius: 5px;
+  overflow: hidden;
   cursor: pointer;
   &:first-child {
     transform-origin: center left;
@@ -43,35 +39,58 @@ const Box = styled(motion.div)`
     transform-origin: center right;
   }
 `;
-const Title = styled.h3`
-  font-size: px;
-`;
 const Thumbnail = styled.div<{ bgPhoto: string }>`
   height: 100%;
   background-image: url("${props => props.bgPhoto}");
   background-size: cover;
   background-position: center center;
-`;
-const Info = styled(motion.div) <{ nothumb: number }>`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;  
-  background-color: rgba(0,0,0,0);
-  font-size:16px;
-  text-align: center;
-  opacity: ${props => props.nothumb};
-  &:hover {
-      opacity: 1;
+  span {
+      position: absolute;
+      top: 5px;
+      left: 5px;
       background-color: rgba(0,0,0,0.8);
-      transition: all 0.2s ease;
+      font-size: 10px;
+      padding: 5px 7px;
+      border-radius: 2px;
   }
 `;
-
+const Info = styled(motion.dl)`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  font-size:16px;
+  padding: 10px;
+  background-color: rgba(0,0,0,0.6);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  dd {
+    width: 100%;
+    margin-bottom: 5px;
+    &:nth-child(1) {
+        font-size: 12px;
+        color: #aaa;
+        span {
+            margin-left: 10px;
+            color: ${props => props.theme.emp};
+        }
+    }
+    &:nth-child(2) {
+        height: 40px;
+        line-height: 20px;
+    }
+    &:nth-child(3) {
+        font-size: 12px;
+    }
+  }
+`;
+const Empty = styled.div`
+  width: 100%;
+  padding: 200px 0;
+  text-align: center;
+  font-size: 40px;
+  opacity: 0.6;
+`;
 
 interface IMovies {
     page: number,
@@ -87,6 +106,8 @@ interface IMovie {
     title: string,
     overview: string,
     vote_average: string,
+    original_language: string,
+    release_date: string,
 }
 
 interface ITvs {
@@ -103,107 +124,77 @@ interface ITv {
     name: string,
     overview: string,
     vote_average: string,
-}
-
-const rowVariants = {
-    start: {
-        x: window.outerWidth,
-    },
-    animate: {
-        x: 0,
-    },
-    exit: {
-        x: -window.outerWidth,
-    }
+    original_language: string,
+    first_air_date: string,
 }
 
 const offset = 6;
-
 function Search() {
     const location = useLocation();
+    const history = useHistory();
     const keyword = new URLSearchParams(location.search).get("keyword");
-    const { data: movies, isLoading: movieLoading } = useQuery<IMovies>(["search", "movie"], () => searchMovie(keyword));
-    const { data: tvs, isLoading: tvLoading } = useQuery<ITvs>(["search", "tv"], () => searchTv(keyword));
-    const [movieIdx, setMovieIdx] = useState(0);
-    const [movieLeaving, setMovieLeaving] = useState(false);
-    const nextMovieIdx = () => {
-        if (!movies) return;
-        if (movieLeaving) return;
-        setMovieLeaving(true);
-
-        const totalMovies = movies.results.length - 1;
-        const maxIndex = Math.floor(totalMovies / offset) - 1;
-        setMovieIdx(movieIdx == maxIndex ? 0 : movieIdx + 1);
+    const { data: movies, isLoading: movieLoading, refetch: refetchMovie } = useQuery<IMovies>(["search", "movie"], () => searchMovie(keyword));
+    const { data: tvs, isLoading: tvLoading, refetch: refetchTV } = useQuery<ITvs>(["search", "tv"], () => searchTv(keyword));
+    const goOnDetail = (id: number) => {
+        history.push(`/detail?id=${id}`);
     };
-    const toggleLeaving = () => setMovieLeaving(false);
+    useEffect(() => {
+        refetchMovie();
+        refetchTV();
+    }, [keyword]);
 
-    console.log(tvs);
+
     return (
         <Wrapper>
             <Keyword>
                 Search Keyword : {keyword}
             </Keyword>
 
-            <Slider>
-                <Title>⭐️MOVIE</Title>
-                <AnimatePresence initial={false} onExitComplete={toggleLeaving}>
-                    <Row
-                        key={movieIdx}
-                        variants={rowVariants}
-                        initial="start"
-                        animate="animate"
-                        exit="exit"
-                        transition={{ type: "tween", duration: 1 }} >
+            {movies?.results.length == 0 && tvs?.results.length == 0 ?
+                <Empty>Nothing :(</Empty>
+                :
+                <List>
+                    <AnimatePresence initial={false}>
                         {
-                            movies?.results.slice(movieIdx * offset, movieIdx * offset + offset).map(
+                            movies?.results.map(
                                 (movie) =>
-                                    <Box key={movie.id}>
+                                    <Box key={movie.id} onClick={() => goOnDetail(movie.id)}>
                                         <Thumbnail bgPhoto={
                                             movie.backdrop_path ? makeImagePath(movie.backdrop_path, "w500") : makeImagePath(movie.poster_path, "w500")}>
                                         </Thumbnail>
 
-                                        <Info nothumb={!movie.backdrop_path && !movie.poster_path ? 1 : 0}>
-                                            {movie.title}
+                                        <Info>
+                                            <dd>{movie.original_language.toUpperCase()} <span>{movie.release_date}</span></dd>
+                                            <dd>{movie.title}</dd>
+                                            <dd>★ {movie.vote_average} / 10</dd>
                                         </Info>
                                     </Box>
                             )
 
                         }
-                    </Row>
-                </AnimatePresence>
+                    </AnimatePresence>
 
-                <button>&lt;</button>
-                <button onClick={nextMovieIdx}>&gt;</button>
-            </Slider>
-
-            <Slider>
-                <Title>⭐️TV</Title>
-                <AnimatePresence initial={false} onExitComplete={toggleLeaving}>
-                    <Row
-                        key={movieIdx}
-                        variants={rowVariants}
-                        initial="start"
-                        animate="animate"
-                        exit="exit"
-                        transition={{ type: "tween", duration: 1 }} >
+                    <AnimatePresence initial={false}>
                         {
-                            tvs?.results.slice(movieIdx * offset, movieIdx * offset + offset).map(
+                            tvs?.results.map(
                                 (tv) =>
-                                    <Box key={tv.id}>
+                                    <Box key={tv.id} onClick={() => goOnDetail(tv.id)}>
                                         <Thumbnail bgPhoto={
                                             tv.backdrop_path ? makeImagePath(tv.backdrop_path, "w500") : makeImagePath(tv.poster_path, "w500")}>
+                                            <span>TV Series</span>
                                         </Thumbnail>
 
-                                        <Info nothumb={!tv.backdrop_path && !tv.poster_path ? 1 : 0}>
-                                            {tv.name}
+                                        <Info>
+                                            <dd>{tv.original_language.toUpperCase()} <span>{tv.first_air_date}</span></dd>
+                                            <dd>{tv.name}</dd>
+                                            <dd>★ {tv.vote_average} / 10</dd>
                                         </Info>
                                     </Box>
                             )
-
                         }
-                    </Row>
-                </AnimatePresence>
-            </Slider>
+                    </AnimatePresence>
+                </List>
+            }
         </Wrapper>
     );
 }

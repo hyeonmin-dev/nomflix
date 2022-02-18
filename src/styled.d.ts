@@ -5,6 +5,7 @@ import 'styled-components';
 declare module "styled-components" {
     export interface DefaultTheme {
         red: string;
+        emp: string;
         black: {
             deepDark: string;
             darker: string;

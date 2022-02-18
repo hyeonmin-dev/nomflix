@@ -144,7 +144,6 @@ function Home() {
     const { data: nowMovies, isLoading: nowMovieLoading } = useQuery<IGetMovieResult>(["movies", "nowPlaying"], getMovie);
     const { data: topMovies, isLoading: topMovieLoading } = useQuery<IGetMovieResult>(["movies", "topMovie"], getTopMovie);
     const { data: upMovies } = useQuery<IGetMovieResult>(["movies", "upMovie"], getComingMovie);
-
     const onOverlayClick = () => {
         history.push(`/`);
     }

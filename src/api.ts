@@ -44,6 +44,12 @@ export function getMovieDetail(movieId: number) {
     );
 }
 
+export function getRecommendMovie(movieId: number) {
+    return fetch(`${BASE_PATH}/movie/${movieId}/recommendations?api_key=${API_KEY}`).then(
+        (response) => response.json()
+    );
+}
+
 export function searchMovie(keyword: string | null) {
     return fetch(`${BASE_PATH}/search/movie/?api_key=${API_KEY}&query=${keyword}`).then(
         (response) => response.json()

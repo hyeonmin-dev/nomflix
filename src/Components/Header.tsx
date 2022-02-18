@@ -43,7 +43,7 @@ const Item = styled.li`
     justify-content: center;
     flex-direction: column;
     &:hover {
-        color: ${(props) => props.theme.white.lighter};
+        color: ${(props) => props.theme.white.darker};
     }
 `;
 const Search = styled.form`
@@ -141,7 +141,6 @@ function Header() {
 
     const { register, handleSubmit } = useForm<IForm>();
     const onValid = (data: IForm) => {
-        console.log(data);
         history.push(`/search?keyword=${data.keyword}`);
     }
     return (
